@@ -13,7 +13,18 @@ return new class extends Migration
     {
         Schema::create('friendships', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('user_id')->index();
+            $table->unsignedBigInteger('friend_id')->index(); 
+            $table->enum('status', ['pending', 'accepted', 'declined'])->default('pending');
+            $table->timestamp('accepted_at')->nullable();
             $table->timestamps();
+
+           
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('friend_id')->references('id')->on('users')->onDelete('cascade');
+
+            
+            $table->unique(['user_id', 'friend_id']);
         });
     }
 

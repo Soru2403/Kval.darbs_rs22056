@@ -1,64 +1,73 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\CollectionController;
 use App\Http\Controllers\ForumController;
 use App\Http\Controllers\FriendshipController;
 
-// Statiskas lapas
+// Galvenās lapas maršruts
 Route::get('/', function () {
-    return view('pages.home');
+    return view('pages.home'); // Sākumlapas skats
 })->name('home');
 
-Route::get('/forum', function () {
-    return view('pages.forum.index');
-})->name('forum.index');
-
-Route::get('/collections', function () {
-    return view('pages.collections.index');
-})->name('collections.index');
-
 // Reģistrācija un autorizācija
-Route::get('/register', [UserController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [UserController::class, 'register']);
-Route::get('/login', [UserController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [UserController::class, 'login']);
-Route::post('/logout', [UserController::class, 'logout'])->name('logout');
+Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register'); // Reģistrācijas formas parādīšana
+Route::post('/register', [AuthController::class, 'register']); // Reģistrācijas pieprasījuma apstrāde
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login'); // Pieteikšanās formas parādīšana
+Route::post('/login', [AuthController::class, 'login'])->name('login.post'); // Pieteikšanās pieprasījuma apstrāde
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Izrakstīšanās pieprasījuma apstrāde
 
-// Dinamiskie maršruti visiem lietotājiem
-Route::get('/collections/popular', [CollectionController::class, 'popular'])->name('collections.popular'); // Популярные коллекции
-Route::get('/media/{id}', [MediaController::class, 'show'])->name('media.show'); // Детальная информация о медиа
+// Publiskās sadaļas
+Route::get('/collections', [CollectionController::class, 'index'])->name('collections.index'); // Publiskās kolekcijas
+Route::get('/collections/popular', [CollectionController::class, 'popular'])->name('collections.popular'); // Populārās kolekcijas
+Route::get('/forum', [ForumController::class, 'index'])->name('forum.index'); // Foruma galvenā lapa
+Route::get('/forum/{id}', [ForumController::class, 'show'])->name('forum.show'); // Foruma ieraksta skatīšana (pievienots)
+Route::get('/media', [MediaController::class, 'index'])->name('media.index'); // Mediju saraksts
+Route::get('/media/{id}', [MediaController::class, 'show'])->name('media.show'); // Konkrētā medija detaļas
 
-// Paredzēts autorizētiem lietotājiem
+// Papildmaršruti kļūdām un statiskām lapām
+Route::view('/error', 'errors.general')->name('error'); // Kļūdu lapa
+
+// Funkcijas tikai reģistrētiem lietotājiem
 Route::middleware(['auth'])->group(function () {
-    // Lietotāju profils
-    Route::get('/profile', [UserController::class, 'profile'])->name('profile');
+    // Lietotāja profils
+    Route::get('/profile', [UserController::class, 'profile'])->name('profile'); // Lietotāja profila skatīšana
+    Route::get('/profile/{id}', [UserController::class, 'show'])->name('profile.show'); // Cita lietotāja profila skatīšana
 
     // Kolekciju pārvaldība
-    Route::get('/collections/my', [CollectionController::class, 'myCollections'])->name('collections.my');
-    Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store');
-    Route::post('/collections/{id}', [CollectionController::class, 'update'])->name('collections.update');
-    Route::delete('/collections/{id}', [CollectionController::class, 'destroy'])->name('collections.destroy');
+    Route::get('/collections/my', [CollectionController::class, 'myCollections'])->name('collections.my'); // Lietotāja kolekcijas
+    Route::post('/collections', [CollectionController::class, 'store'])->name('collections.store'); // Jaunas kolekcijas izveidošana
+    Route::post('/collections/{id}', [CollectionController::class, 'update'])->name('collections.update'); // Esošas kolekcijas rediģēšana
+    Route::delete('/collections/{id}', [CollectionController::class, 'destroy'])->name('collections.destroy'); // Kolekcijas dzēšana
 
     // Forums
-    Route::post('/forum', [ForumController::class, 'store'])->name('forum.store');
-    Route::post('/forum/{id}/comment', [ForumController::class, 'comment'])->name('forum.comment');
+    Route::post('/forum', [ForumController::class, 'store'])->name('forum.store'); // Foruma ieraksta izveide
+    Route::post('/forum/{id}/comment', [ForumController::class, 'comment'])->name('forum.comment'); // Komentāra pievienošana ierakstam
+    Route::delete('/forum/{id}', [ForumController::class, 'destroy'])->name('forum.destroy'); // Foruma ieraksta dzēšana (tikai autors/admins)
 
     // Draudzība
-    Route::post('/friendships', [FriendshipController::class, 'sendRequest'])->name('friendships.send');
-    Route::post('/friendships/{id}/accept', [FriendshipController::class, 'acceptRequest'])->name('friendships.accept');
-    Route::delete('/friendships/{id}', [FriendshipController::class, 'destroy'])->name('friendships.destroy');
+    Route::post('/friendships', [FriendshipController::class, 'sendRequest'])->name('friendships.send'); // Draudzības pieprasījuma nosūtīšana
+    Route::post('/friendships/{id}/accept', [FriendshipController::class, 'acceptRequest'])->name('friendships.accept'); // Pieprasījuma apstiprināšana
+    Route::delete('/friendships/{id}', [FriendshipController::class, 'destroy'])->name('friendships.destroy'); // Draudzības attiecību dzēšana
 
     // Vērtējumi un mijiedarbība ar multividi
-    Route::post('/media/{id}/rate', [MediaController::class, 'rate'])->name('media.rate');
+    Route::post('/media/{id}/rate', [MediaController::class, 'rate'])->name('media.rate'); // Medija vērtēšana
 });
 
-// Administrators
+// Funkcijas administratoriem
 Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/admin', [UserController::class, 'adminDashboard'])->name('admin.dashboard');
-    Route::delete('/forum/{id}', [ForumController::class, 'destroy'])->name('forum.destroy');
-    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy');
-    Route::post('/users/{id}/privileges', [UserController::class, 'changePrivileges'])->name('users.privileges');
+    Route::get('/admin', [UserController::class, 'adminDashboard'])->name('admin.dashboard'); // Administratora panelis
+    Route::delete('/forum/{id}', [ForumController::class, 'destroy'])->name('forum.destroy'); // Foruma ieraksta dzēšana (admina tiesības)
+    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy'); // Lietotāja dzēšana
+    Route::post('/users/{id}/privileges', [UserController::class, 'changePrivileges'])->name('users.privileges'); // Lietotāja privilēģiju maiņa
 });
+
+// Nodrošinām, ka jebkura neatpazīta lapa tiek novirzīta uz kļūdu vai sākumlapu
+Route::fallback(function () {
+    return redirect()->route('home'); // Ja lapa nav atrasta, novirzām uz galveno lapu
+});
+
+

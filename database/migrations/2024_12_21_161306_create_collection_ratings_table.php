@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('forum_posts', function (Blueprint $table) {
+        Schema::create('collection_ratings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('collection_id')->constrained()->onDelete('cascade');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('title', 200);
-            $table->text('content'); 
-            $table->string('keywords', 50)->nullable(); 
+            $table->tinyInteger('rating')->unsigned()->comment('Оценка от 1 до 5'); 
             $table->timestamps();
         });
     }
@@ -26,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('forum_posts');
+        Schema::dropIfExists('collection_ratings');
     }
 };

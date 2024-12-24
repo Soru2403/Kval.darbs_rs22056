@@ -5,23 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ForumPost extends Model
+class ForumComment extends Model
 {
     use HasFactory;
 
     // Norādām laukus, kurus var masveidīgi piešķirt
-    protected $fillable = ['title', 'content', 'keywords', 'user_id'];
+    protected $fillable = ['content', 'post_id', 'user_id'];
 
-    // Attiecības ar lietotāju (ieraksta autoru)
+    // Attiecības ar lietotāju (komentāra autoru)
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Attiecības ar komentāru, kuram pieder ieraksts
-    public function comments()
+    // Attiecības ar ierakstu, kuram pieder komentārs
+    public function post()
     {
-        return $this->hasMany(ForumComment::class);
+        return $this->belongsTo(ForumPost::class);
     }
 }
-
