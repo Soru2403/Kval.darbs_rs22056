@@ -1,8 +1,12 @@
-@extends('layouts.main')
+@extends('layouts.app')
 
 @section('title', 'Foruma ieraksts')
 
 @section('content')
+
+    {{-- Atgriezties uz foruma galveno lapu --}}
+    <a href="{{ route('forum.index') }}" class="btn btn-secondary mt-3">Atgriezties uz forumu</a>
+    
     <h1>{{ $post->title }}</h1>
     <p>{{ $post->content }}</p>
     <small>Izveidots: {{ $post->created_at->format('d.m.Y H:i') }} | Autors: {{ $post->user->name }}</small>
@@ -50,4 +54,6 @@
             <button type="submit" class="btn btn-danger">Dzēst ierakstu</button>
         </form>
     @endcan
+
 @endsection
+

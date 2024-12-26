@@ -1,3 +1,98 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    
+    .forum-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .forum-sidebar {
+        flex: 1;
+        max-width: 250px;
+    }
+
+    .forum-main {
+        flex: 3;
+        max-width: 1000px;
+    }
+
+    
+    .forum-post-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        background-color: #fff;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .forum-post-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+   
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 5px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background-color: #45a049;
+    }
+
+    .btn-secondary {
+        background-color: #f1f1f1;
+        color: #333;
+        border: none;
+    }
+
+    .btn-secondary:hover {
+        background-color: #ddd;
+    }
+
+    
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-control {
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        width: 100%;
+        font-size: 1rem;
+    }
+
+    .form-control:focus {
+        border-color: #4CAF50;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    }
+
+    
+    .comment {
+        background-color: #f9f9f9;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border: 1px solid #ddd;
+    }
+
+    .comment small {
+        color: #888;
+    }
+}
+

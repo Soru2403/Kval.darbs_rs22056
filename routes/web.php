@@ -23,8 +23,10 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Iz
 // Publiskās sadaļas
 Route::get('/collections', [CollectionController::class, 'index'])->name('collections.index'); // Publiskās kolekcijas
 Route::get('/collections/popular', [CollectionController::class, 'popular'])->name('collections.popular'); // Populārās kolekcijas
-Route::get('/forum', [ForumController::class, 'index'])->name('forum.index'); // Foruma galvenā lapa
-Route::get('/forum/{id}', [ForumController::class, 'show'])->name('forum.show'); // Foruma ieraksta skatīšana (pievienots)
+
+// Foruma galvenā lapa ar iespēju norādīt kārtošanas virzienu
+Route::get('/forum', [ForumController::class, 'index'])->name('forum.index'); // Pieņem parametru 'sort' kārtošanas virzienam (asc vai desc)
+Route::get('/forum/{id}', [ForumController::class, 'show'])->name('forum.show'); // Foruma ieraksta skatīšana
 Route::get('/media', [MediaController::class, 'index'])->name('media.index'); // Mediju saraksts
 Route::get('/media/{id}', [MediaController::class, 'show'])->name('media.show'); // Konkrētā medija detaļas
 
@@ -32,7 +34,6 @@ Route::get('/media/{id}', [MediaController::class, 'show'])->name('media.show');
 Route::view('/error', 'errors.general')->name('error'); // Kļūdu lapa
 
 // Funkcijas tikai reģistrētiem lietotājiem
-Route::middleware(['auth'])->group(function () {
     // Lietotāja profils
     Route::get('/profile', [UserController::class, 'profile'])->name('profile'); // Lietotāja profila skatīšana
     Route::get('/profile/{id}', [UserController::class, 'show'])->name('profile.show'); // Cita lietotāja profila skatīšana
@@ -44,9 +45,11 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/collections/{id}', [CollectionController::class, 'destroy'])->name('collections.destroy'); // Kolekcijas dzēšana
 
     // Forums
-    Route::post('/forum', [ForumController::class, 'store'])->name('forum.store'); // Foruma ieraksta izveide
+    Route::get('/forum/create', [ForumController::class, 'create'])->middleware('auth')->name('forum.create');
+    Route::post('/forum', [ForumController::class, 'store'])->middleware('auth')->name('forum.store');
+    Route::get('/forum/search', [ForumController::class, 'search'])->name('forum.search'); // Meklēšana pēc nosaukuma vai atslēgvārdiem
     Route::post('/forum/{id}/comment', [ForumController::class, 'comment'])->name('forum.comment'); // Komentāra pievienošana ierakstam
-    Route::delete('/forum/{id}', [ForumController::class, 'destroy'])->name('forum.destroy'); // Foruma ieraksta dzēšana (tikai autors/admins)
+    Route::delete('/forum/{id}', [ForumController::class, 'destroyPost'])->name('forum.destroy'); // Foruma ieraksta dzēšana (tikai autors/admins)
 
     // Draudzība
     Route::post('/friendships', [FriendshipController::class, 'sendRequest'])->name('friendships.send'); // Draudzības pieprasījuma nosūtīšana
@@ -55,12 +58,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Vērtējumi un mijiedarbība ar multividi
     Route::post('/media/{id}/rate', [MediaController::class, 'rate'])->name('media.rate'); // Medija vērtēšana
-});
 
 // Funkcijas administratoriem
-Route::middleware(['auth', 'admin'])->group(function () {
+Route::middleware(['auth', 'admin'])->group(function () {  // Šeit pievienojam papildus 'admin' middleware, lai pārvaldītu administrēšanas maršrutus
     Route::get('/admin', [UserController::class, 'adminDashboard'])->name('admin.dashboard'); // Administratora panelis
-    Route::delete('/forum/{id}', [ForumController::class, 'destroy'])->name('forum.destroy'); // Foruma ieraksta dzēšana (admina tiesības)
+    Route::delete('/forum/{id}', [ForumController::class, 'destroyPost'])->name('forum.destroy'); // Foruma ieraksta dzēšana (admina tiesības)
     Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy'); // Lietotāja dzēšana
     Route::post('/users/{id}/privileges', [UserController::class, 'changePrivileges'])->name('users.privileges'); // Lietotāja privilēģiju maiņa
 });
@@ -69,5 +71,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 Route::fallback(function () {
     return redirect()->route('home'); // Ja lapa nav atrasta, novirzām uz galveno lapu
 });
+
+
 
 

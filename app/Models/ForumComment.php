@@ -15,12 +15,14 @@ class ForumComment extends Model
     // Attiecības ar lietotāju (komentāra autoru)
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class); // Attiecības ar lietotāju, izmantojot 'user_id'
     }
 
     // Attiecības ar ierakstu, kuram pieder komentārs
     public function post()
     {
-        return $this->belongsTo(ForumPost::class);
+        return $this->belongsTo(ForumPost::class, 'post_id'); // Attiecības ar ForumPost, izmantojot 'post_id'
     }
 }
+
+

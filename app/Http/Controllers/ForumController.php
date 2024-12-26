@@ -10,39 +10,52 @@ class ForumController extends Controller
 {
     public function __construct()
     {
-        // Этот код должен работать, если контроллер наследует класс `Controller` от Laravel
-        $this->middleware('auth')->except(['index', 'show']);
+        // Konstruktoru var izmantot, lai inicializētu middleware vai citu loģiku
     }
 
     // Foruma galvenā lapa — visi ieraksti
-    public function index()
+    public function index(Request $request)
     {
-        $posts = ForumPost::with('comments')->latest()->get(); // Iegūstam ierakstus ar komentāriem, sakārtotus pēc datuma
-        return view('pages.forum.index', compact('posts'));
+        // Saņemam lietotāja izvēlēto kārtošanas virzienu (noklusējums ir 'desc')
+        $sort = $request->get('sort', 'desc');
+
+        // Iegūstam ierakstus ar komentāriem, sakārtotus pēc izvēlētā kārtošanas virziena
+        $posts = ForumPost::with('comments')
+                    ->orderBy('created_at', $sort)
+                    ->paginate(10); // Izmantojam paginate() metodi, lai iegūtu ierakstus ar lapošanas atbalstu
+
+        // Atgriežam skatu ar ierakstiem, izvēlēto kārtošanas virzienu un pieprasījuma parametriem
+        return view('pages.forum.index', compact('posts', 'sort'));
+    }
+    public function create()
+    {
+        // Atgriežam skatu jauna ieraksta izveides formai
+        return view('pages.forum.create');
+    }
+    
+    public function store(Request $request)
+    {
+        // Veicam validāciju, lai pārbaudītu lietotāja ievadītos datus
+        $request->validate([
+            'title' => 'required|string|max:255', // Obligāts lauks — nosaukums
+            'keywords' => 'nullable|string|max:255', // Neobligāts lauks — atslēgvārdi
+            'content' => 'required|string', // Obligāts lauks — ieraksta saturs
+        ]);
+    
+        // Izveidojam jaunu ierakstu no autentificētā lietotāja
+        auth()->user()->forumPosts()->create($request->only(['title', 'keywords', 'content']));
+    
+        // Pāradresējam uz foruma sākumlapu ar paziņojumu par veiksmīgu izveidi
+        return redirect()->route('forum.index')->with('success', 'Ieraksts veiksmīgi izveidots!');
     }
 
     // Viena ieraksta lapa ar komentāriem
     public function show($id)
     {
-        // Iegūstam konkrētu ierakstu ar tā komentāriem un komentāru lietotājiem
-        $post = ForumPost::with('comments.user')->findOrFail($id); 
+        $post = ForumPost::with('comments.user')->findOrFail($id); // Iegūstam konkrētu ierakstu ar tā komentāriem un komentāru lietotājiem
         return view('pages.forum.show', compact('post')); // Atgriežam skatu ar postu un tā komentāriem
     }
-
-    // Jauna ieraksta izveide
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-        ]);
-
-        // Izveidojam jaunu ierakstu autorizēta lietotāja vārdā
-        auth()->user()->forumPosts()->create($request->all());
-
-        return back()->with('success', 'Ieraksts veiksmīgi izveidots!');
-    }
-
+ 
     // Komentāra pievienošana ierakstam
     public function comment(Request $request, $id)
     {
@@ -75,10 +88,11 @@ class ForumController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
+            'keywords' => 'nullable|string|max:255',
             'content' => 'required|string',
         ]);
 
-        $post->update($request->all());
+        $post->update($request->only(['title', 'keywords', 'content']));
 
         return redirect()->route('forum.show', $post->id)->with('success', 'Ieraksts veiksmīgi atjaunināts!');
     }
@@ -90,7 +104,7 @@ class ForumController extends Controller
         $this->authorize('delete', $post); // Pārbaudām, vai lietotājam ir tiesības dzēst šo ierakstu
         $post->delete();
 
-        return back()->with('success', 'Ieraksts dzēsts.');
+        return redirect()->route('forum.index')->with('success', 'Ieraksts dzēsts.');
     }
 
     // Komentāra dzēšana
@@ -112,10 +126,15 @@ class ForumController extends Controller
 
         $query = $request->input('query');
         $posts = ForumPost::where('title', 'LIKE', "%{$query}%")
-                          ->orWhere('content', 'LIKE', "%{$query}%")
-                          ->get();
+                          ->orWhere('keywords', 'LIKE', "%{$query}%") // Pievienota meklēšana pēc atslēgvārdiem
+                          ->latest()
+                          ->paginate(10); // Izmantojam paginate() meklēšanas rezultātu lapošanai
 
         return view('pages.forum.index', compact('posts'));
     }
 }
+
+
+
+
 

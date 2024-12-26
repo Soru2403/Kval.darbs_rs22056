@@ -3,24 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Laravel App')</title>
-    <!-- Подключение CSS -->
+    <title>Colectio</title>
     <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <header>
-        @include('partials.header')
+    <!-- Vietnes galvene (header) -->
+    <header class="bg-light shadow-sm">
+        <div class="container d-flex justify-content-between align-items-center py-3">
+            <!-- Vietnes nosaukums un logs -->
+            <div>
+                <h1 class="h4 m-0">
+                    <a href="{{ route('home') }}" class="text-decoration-none text-dark">Colectio</a>
+                </h1>
+            </div>
+
+            <!-- Navigācijas saites -->
+            <nav>
+                <a href="{{ route('collections.index') }}" class="ms-3 text-decoration-none text-primary">Collections</a>
+                <a href="{{ route('forum.index') }}" class="ms-3 text-decoration-none text-primary">Forum</a>
+            </nav>
+
+            <!-- Lietotāja paneļa saites -->
+            <div>
+                @guest
+                    <!-- Ja lietotājs nav autentificēts -->
+                    <a href="{{ route('login') }}" class="ms-3 text-decoration-none text-primary">Log in</a>
+                    <a href="{{ route('register') }}" class="ms-3 text-decoration-none text-primary">Sign up</a>
+                @else
+                    <!-- Ja lietotājs ir autentificēts -->
+                    <a href="{{ route('profile') }}" class="ms-3 text-decoration-none text-primary">My Profile</a>
+                    <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="ms-3 text-decoration-none text-danger">Exit</a>
+                    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                        @csrf
+                    </form>
+                @endguest
+            </div>
+        </div>
     </header>
 
-    <main>
+    <!-- Galvenais saturs -->
+    <main class="container py-4">
         @yield('content')
     </main>
 
-    <footer>
-        @include('partials.footer')
-    </footer>
-
-    <!-- Подключение JavaScript -->
-    <script src="{{ asset('js/app.js') }}"></script>
+    <!-- Bootstrap JS  -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

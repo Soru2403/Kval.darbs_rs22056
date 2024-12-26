@@ -1,71 +1,70 @@
-@extends('layouts.main')
-
-@section('title', 'Forum')
+@extends('layouts.app')
 
 @section('content')
-    <h1>Forums</h1>
-    <p>Apskatiet un piedalieties foruma diskusijās.</p>
+<div class="container">
+    <div class="row">
+        <!-- Kreisais stabiņš -->
+        <div class="col-md-3">
+            <!-- Poga jauna ieraksta izveidei -->
+            @auth
+                <a href="{{ route('forum.create') }}" class="btn btn-primary btn-block mb-3">Izveidot jaunu ierakstu</a>
+            @endauth
 
-    {{-- Pievieno jaunu ierakstu, ja lietotājs ir autentificēts --}}
-    @auth
-        <form action="{{ route('forum.store') }}" method="POST">
-            @csrf
-            <div class="form-group">
-                <label for="title">Ieraksta nosaukums:</label>
-                <input type="text" name="title" id="title" class="form-control" required>
+            <!-- Meklēšanas forma -->
+            <form method="GET" action="{{ route('forum.index') }}" class="mb-3">
+                <div class="input-group">
+                    <!-- Meklēšanas ievades lauks -->
+                    <input type="text" name="query" class="form-control" placeholder="Meklēt pēc nosaukuma/atslēgvārdiem" value="{{ request('query') }}">
+                    <button type="submit" class="btn btn-secondary">Meklēt</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Labais stabiņš -->
+        <div class="col-md-9">
+            <!-- Ierakstu kārtošanas izvēlne -->
+            <div class="d-flex justify-content-end mb-3">
+                <form method="GET" action="{{ route('forum.index') }}">
+                    <!-- Slēpti lauki meklēšanas vaicājumam, lai saglabātu to -->
+                    <input type="hidden" name="query" value="{{ request('query') }}">
+                    <select name="sort" onchange="this.form.submit()" class="form-select w-auto">
+                        <!-- Opcijas kārtošanas virzienam -->
+                        <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Jaunākie</option>
+                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Vecākie</option>
+                    </select>
+                </form>
             </div>
-            <div class="form-group">
-                <label for="content">Ieraksta saturs:</label>
-                <textarea name="content" id="content" class="form-control" rows="4" required></textarea>
-            </div>
-            <button type="submit" class="btn btn-primary mt-2">Izveidot ierakstu</button>
-        </form>
-    @endauth
 
-    <hr>
-
-    {{-- Foruma ierakstu saraksts --}}
-    <div>
-        @foreach($posts as $post)
-            <div class="forum-post">
-                <h2>{{ $post->title }}</h2>
-                <p>{{ $post->content }}</p>
-                <small>Izveidots: {{ $post->created_at->format('d.m.Y H:i') }} | Autors: {{ $post->user->name }}</small>
-                
-                {{-- Komentāru sekcija --}}
-                <h3>Komentāri:</h3>
-                <div>
-                    @foreach($post->comments as $comment)
-                        <div class="comment">
-                            <p>{{ $comment->content }}</p>
-                            <small>Izveidots: {{ $comment->created_at->format('d.m.Y H:i') }} | Autors: {{ $comment->user->name }}</small>
-                        </div>
+            <!-- Ierakstu saraksts -->
+            @if($posts->isEmpty())
+                <p class="text-muted">Nav atrasti ieraksti.</p>
+            @else
+                <div class="list-group">
+                    <!-- Cikls cauri ierakstiem -->
+                    @foreach($posts as $post)
+                        <a href="{{ route('forum.show', $post->id) }}" class="list-group-item list-group-item-action">
+                            <h5>{{ $post->title }}</h5>
+                            <p class="mb-1 text-muted">{{ Str::limit($post->content, 100) }}</p>
+                            <small>
+                                Izveidoja: <a href="{{ route('profile.show', $post->user->id) }}">{{ $post->user->name }}</a>
+                                - {{ $post->created_at->format('d.m.Y H:i') }}
+                            </small>
+                        </a>
                     @endforeach
                 </div>
-
-                {{-- Pievieno komentāru, ja lietotājs ir autentificēts --}}
-                @auth
-                    <form action="{{ route('forum.comment', $post->id) }}" method="POST" class="mt-3">
-                        @csrf
-                        <div class="form-group">
-                            <label for="content">Tavs komentārs:</label>
-                            <textarea name="content" id="content" class="form-control" rows="3" required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-secondary mt-2">Pievienot komentāru</button>
-                    </form>
-                @endauth
-
-                {{-- Dzēst ierakstu, ja lietotājs ir autors vai administrators --}}
-                @can('delete', $post)
-                    <form action="{{ route('forum.destroy', $post->id) }}" method="POST" class="mt-3">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn btn-danger">Dzēst ierakstu</button>
-                    </form>
-                @endcan
-            </div>
-            <hr>
-        @endforeach
+                <!-- Lapu navigācija -->
+                <div class="mt-3">
+                    <!-- Atjaunots links ar pieprasījuma parametriem, kas ļauj saglabāt meklēšanas un kārtošanas parametrus -->
+                    {{ $posts->withQueryString()->links() }}
+                </div>
+            @endif
+        </div>
     </div>
+</div>
 @endsection
+
+
+
+
+
 

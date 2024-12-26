@@ -18,10 +18,12 @@ class ForumPost extends Model
         return $this->belongsTo(User::class);
     }
 
-    // Attiecības ar komentāru, kuram pieder ieraksts
+    // Attiecības ar komentāriem, kuram pieder ieraksts
     public function comments()
     {
-        return $this->hasMany(ForumComment::class);
+        return $this->hasMany(ForumComment::class, 'post_id');
     }
 }
+
+
 
