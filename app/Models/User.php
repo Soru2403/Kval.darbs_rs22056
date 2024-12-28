@@ -40,5 +40,15 @@ class User extends Authenticatable
         // Šī attiecība norāda, ka lietotājam var būt vairāki forumu ieraksti
         return $this->hasMany(ForumPost::class);
     }
-}
 
+    /**
+     * Pārbauda, vai lietotājs ir administrators.
+     * 
+     * @return bool
+     */
+    public function isAdmin()
+    {
+        // Šis pārbauda, vai lietotājam ir 'admin' loma
+        return $this->role === 'admin';  // Ja 'role' ir 'admin', atgriežam true, citādi false
+    }
+}

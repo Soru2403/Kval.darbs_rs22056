@@ -11,7 +11,7 @@
             @endauth
 
             <!-- Meklēšanas forma -->
-            <form method="GET" action="{{ route('forum.index') }}" class="mb-3">
+            <form method="GET" action="{{ route('forum.search') }}" class="mb-3"> <!-- Formas darbība tiek norādīta uz forum.search maršrutu -->
                 <div class="input-group">
                     <!-- Meklēšanas ievades lauks -->
                     <input type="text" name="query" class="form-control" placeholder="Meklēt pēc nosaukuma/atslēgvārdiem" value="{{ request('query') }}">
@@ -29,8 +29,8 @@
                     <input type="hidden" name="query" value="{{ request('query') }}">
                     <select name="sort" onchange="this.form.submit()" class="form-select w-auto">
                         <!-- Opcijas kārtošanas virzienam -->
-                        <option value="newest" {{ request('sort') == 'newest' ? 'selected' : '' }}>Jaunākie</option>
-                        <option value="oldest" {{ request('sort') == 'oldest' ? 'selected' : '' }}>Vecākie</option>
+                        <option value="desc" {{ request('sort') == 'desc' ? 'selected' : '' }}>Jaunākie</option>
+                        <option value="asc" {{ request('sort') == 'asc' ? 'selected' : '' }}>Vecākie</option>
                     </select>
                 </form>
             </div>
@@ -62,6 +62,10 @@
     </div>
 </div>
 @endsection
+
+
+
+
 
 
 

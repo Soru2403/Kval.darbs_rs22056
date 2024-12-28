@@ -94,5 +94,13 @@
     .comment small {
         color: #888;
     }
+
+    .page-item a.page-link {
+        display: none;
+    }
+    .page-item.disabled span.page-link {
+        display: none;
+    }
+    
 }
 

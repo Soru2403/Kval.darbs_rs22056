@@ -8,54 +8,59 @@ use App\Models\ForumComment;
 
 class ForumController extends Controller
 {
+    // Konstruktoru var izmantot, lai inicializētu middleware vai citu loģiku
     public function __construct()
     {
-        // Konstruktoru var izmantot, lai inicializētu middleware vai citu loģiku
+        // Ja nepieciešams, šeit var pievienot middleware, lai pārliecinātos, ka lietotājs ir autentificēts utt.
     }
 
     // Foruma galvenā lapa — visi ieraksti
     public function index(Request $request)
     {
-        // Saņemam lietotāja izvēlēto kārtošanas virzienu (noklusējums ir 'desc')
+        $validSortDirections = ['asc', 'desc']; // Pieļaujamās kārtošanas kārtības
         $sort = $request->get('sort', 'desc');
-
-        // Iegūstam ierakstus ar komentāriem, sakārtotus pēc izvēlētā kārtošanas virziena
+    
+        // Pārbaudām, vai 'sort' ir pareiza vērtība
+        if (!in_array($sort, $validSortDirections)) {
+            $sort = 'desc'; // Noklusējuma vērtība
+        }
+    
+        // Ierakstu iegūšana ar ierobežotu daudzumu vienā lapā
         $posts = ForumPost::with('comments')
-                    ->orderBy('created_at', $sort)
-                    ->paginate(10); // Izmantojam paginate() metodi, lai iegūtu ierakstus ar lapošanas atbalstu
-
-        // Atgriežam skatu ar ierakstiem, izvēlēto kārtošanas virzienu un pieprasījuma parametriem
+                          ->orderBy('created_at', $sort)
+                          ->paginate(5); // Katras lapas ierakstu skaits
+    
         return view('pages.forum.index', compact('posts', 'sort'));
     }
+    
+    // Jauna ieraksta izveide
     public function create()
     {
-        // Atgriežam skatu jauna ieraksta izveides formai
         return view('pages.forum.create');
     }
-    
+
+    // Jauna ieraksta saglabāšana
     public function store(Request $request)
     {
-        // Veicam validāciju, lai pārbaudītu lietotāja ievadītos datus
         $request->validate([
-            'title' => 'required|string|max:255', // Obligāts lauks — nosaukums
-            'keywords' => 'nullable|string|max:255', // Neobligāts lauks — atslēgvārdi
-            'content' => 'required|string', // Obligāts lauks — ieraksta saturs
+            'title' => 'required|string|max:255',
+            'keywords' => 'nullable|string|max:255',
+            'content' => 'required|string',
         ]);
-    
-        // Izveidojam jaunu ierakstu no autentificētā lietotāja
+
         auth()->user()->forumPosts()->create($request->only(['title', 'keywords', 'content']));
-    
-        // Pāradresējam uz foruma sākumlapu ar paziņojumu par veiksmīgu izveidi
+
         return redirect()->route('forum.index')->with('success', 'Ieraksts veiksmīgi izveidots!');
     }
 
     // Viena ieraksta lapa ar komentāriem
     public function show($id)
     {
-        $post = ForumPost::with('comments.user')->findOrFail($id); // Iegūstam konkrētu ierakstu ar tā komentāriem un komentāru lietotājiem
-        return view('pages.forum.show', compact('post')); // Atgriežam skatu ar postu un tā komentāriem
+        $post = ForumPost::with('comments.user')->findOrFail($id);
+        $editCommentId = session('edit_comment_id'); // Iegūstam rediģējamā komentāra ID no sesijas
+        return view('pages.forum.show', compact('post', 'editCommentId')); // Nododam datus uz skatu
     }
- 
+
     // Komentāra pievienošana ierakstam
     public function comment(Request $request, $id)
     {
@@ -63,7 +68,7 @@ class ForumController extends Controller
             'content' => 'required|string',
         ]);
 
-        $post = ForumPost::findOrFail($id); // Atrodam ierakstu pēc ID
+        $post = ForumPost::findOrFail($id);
         $post->comments()->create([
             'user_id' => auth()->id(),
             'content' => $request->content,
@@ -72,48 +77,130 @@ class ForumController extends Controller
         return back()->with('success', 'Komentārs pievienots!');
     }
 
-    // Ieraksta rediģēšana
+    // Metode postu rediģēšanai
     public function edit($id)
     {
+        // Atrodam ierakstu pēc ID
         $post = ForumPost::findOrFail($id);
-        $this->authorize('update', $post); // Pārbaudām, vai lietotājam ir tiesības rediģēt šo ierakstu
+
+        // Pārliecināmies, ka lietotājs ir šo ierakstu radījis
+        if (auth()->user()->id !== $post->user_id && !auth()->user()->isAdmin()) {
+            // Ja lietotājs nav šī ieraksta autors vai administrators, atgriežam kļūdu
+            return redirect()->route('forum.index')->with('error', 'Jums nav tiesību rediģēt šo ierakstu.');
+        }
+
+        // Pārsūtām ierakstu uz rediģēšanas skatu
         return view('pages.forum.edit', compact('post'));
     }
 
-    // Ieraksta atjaunināšana
+    // Atjaunina ieraksta saturu
     public function update(Request $request, $id)
     {
         $post = ForumPost::findOrFail($id);
-        $this->authorize('update', $post); // Pārbaudām, vai lietotājam ir tiesības rediģēt šo ierakstu
 
+        // Pārbaudām, vai lietotājs ir šī ieraksta autors vai administrators
+        if (auth()->user()->id !== $post->user_id && !auth()->user()->isAdmin()) {
+            return redirect()->route('forum.index')->with('error', 'Jums nav tiesību atjaunināt šo ierakstu.');
+        }
+
+        // Validējam iesniegto formu
         $request->validate([
             'title' => 'required|string|max:255',
             'keywords' => 'nullable|string|max:255',
             'content' => 'required|string',
         ]);
 
+        // Atjauninām ieraksta datus
         $post->update($request->only(['title', 'keywords', 'content']));
 
+        // Pārsūtām lietotāju uz foruma sākumlapu ar veiksmīgas atjaunināšanas ziņojumu
         return redirect()->route('forum.show', $post->id)->with('success', 'Ieraksts veiksmīgi atjaunināts!');
+    }
+
+    // Aktivizē rediģēšanas režīmu priekš komentāra
+    public function editComment(Request $request, $postId, $commentId)
+    {
+        $comment = ForumComment::findOrFail($commentId);
+
+        // Pārbaudām, vai lietotājs ir šī komentāra autors
+        if (auth()->check() && auth()->user()->id === $comment->user_id) {
+            // Saglabājam rediģējamā komentāra ID sesijā
+            $request->session()->put('edit_comment_id', $comment->id);
+        }
+
+        // Pāradresējam atpakaļ uz ieraksta skatu
+        return redirect()->route('forum.show', $postId);
+    }
+
+    // Atjaunina komentāra saturu
+    public function updateComment(Request $request, $postId, $commentId)
+    {
+        $comment = ForumComment::findOrFail($commentId);
+
+        // Pārbaudām, vai lietotājs ir šī komentāra autors
+        if (auth()->check() && auth()->user()->id === $comment->user_id) {
+            $request->validate([
+                'content' => 'required|string',
+            ]);
+
+            $comment->update($request->only('content'));
+
+            // Noņemam rediģēšanas režīmu
+            $request->session()->forget('edit_comment_id');
+        } else {
+            return back()->with('error', 'Jums nav tiesību rediģēt šo komentāru.');
+        }
+
+        // Atgriežam lietotāju uz ieraksta lapu
+        return redirect()->route('forum.show', $postId)->with('success', 'Komentārs veiksmīgi atjaunināts!');
+    }
+
+    // Atceļ rediģēšanas režīmu
+    public function cancelEditComment(Request $request, $postId)
+    {
+        // Notīram rediģēšanas režīmu no sesijas
+        $request->session()->forget('edit_comment_id');
+
+        return redirect()->route('forum.show', $postId);
     }
 
     // Ieraksta dzēšana
     public function destroyPost($id)
     {
         $post = ForumPost::findOrFail($id);
-        $this->authorize('delete', $post); // Pārbaudām, vai lietotājam ir tiesības dzēst šo ierakstu
-        $post->delete();
 
+        // Pārbaudām, vai lietotājs ir administrators
+        if (auth()->user()->isAdmin()) {
+            $post->delete();
+            return redirect()->route('forum.index')->with('success', 'Ieraksts dzēsts.');
+        }
+
+        // Pārbaudām, vai lietotājs ir šī ieraksta autors
+        if (auth()->user()->id !== $post->user_id) {
+            return redirect()->route('forum.index')->with('error', 'Jums nav tiesību dzēst šo ierakstu.');
+        }
+
+        $post->delete();
         return redirect()->route('forum.index')->with('success', 'Ieraksts dzēsts.');
     }
 
     // Komentāra dzēšana
-    public function destroyComment($id)
+    public function destroyComment($postId, $commentId)
     {
-        $comment = ForumComment::findOrFail($id);
-        $this->authorize('delete', $comment); // Pārbaudām, vai lietotājam ir tiesības dzēst šo komentāru
-        $comment->delete();
+        $comment = ForumComment::findOrFail($commentId);
 
+        // Pārbaudām, vai lietotājs ir administrators
+        if (auth()->user()->isAdmin()) {
+            $comment->delete();
+            return back()->with('success', 'Komentārs dzēsts.');
+        }
+
+        // Pārbaudām, vai lietotājs ir šī komentāra autors
+        if (auth()->user()->id !== $comment->user_id) {
+            return back()->with('error', 'Jums nav tiesību dzēst šo komentāru.');
+        }
+
+        $comment->delete();
         return back()->with('success', 'Komentārs dzēsts.');
     }
 
@@ -121,20 +208,18 @@ class ForumController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'query' => 'required|string|min:3', // Meklēšanai jābūt vismaz 3 rakstzīmēm
+            'query' => 'required|string|min:3', // Pārbaudām, vai vaicājums ir derīgs
         ]);
 
         $query = $request->input('query');
-        $posts = ForumPost::where('title', 'LIKE', "%{$query}%")
-                          ->orWhere('keywords', 'LIKE', "%{$query}%") // Pievienota meklēšana pēc atslēgvārdiem
-                          ->latest()
-                          ->paginate(10); // Izmantojam paginate() meklēšanas rezultātu lapošanai
+        $sort = $request->input('sort', 'desc'); // Saņemam kārtošanas vērtību ar noklusējumu 'desc'
 
-        return view('pages.forum.index', compact('posts'));
+        // Meklējam ierakstus pēc nosaukuma vai atslēgvārdiem
+        $posts = ForumPost::where('title', 'LIKE', "%{$query}%")
+                        ->orWhere('keywords', 'LIKE', "%{$query}%")
+                        ->orderBy('created_at', $sort)
+                        ->paginate(5); // Katras lapas ierakstu skaits
+
+        return view('pages.forum.index', compact('posts', 'query', 'sort'));
     }
 }
-
-
-
-
-

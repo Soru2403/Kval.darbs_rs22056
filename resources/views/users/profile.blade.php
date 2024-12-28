@@ -16,12 +16,18 @@
         <p><strong>E-pasts:</strong> {{ $user->email }}</p>
         <p><strong>Reģistrācijas datums:</strong> {{ $user->created_at->format('Y-m-d') }}</p>
     </div>
-    <div class="profile-actions">
-        <a href="#" class="btn btn-secondary">Rediģēt profilu</a>
-        <form action="{{ route('logout') }}" method="POST" style="display: inline;">
-            @csrf
-            <button type="submit" class="btn btn-danger">Izrakstīties</button>
-        </form>
-    </div>
+    {{-- Pārbaudām, vai pašreizējais lietotājs ir profila īpašnieks --}}
+    @if (Auth::check() && Auth::id() === $user->id)
+        <div class="profile-actions">
+            {{-- Rediģēšanas poga --}}
+            <a href="{{ route('profile.edit') }}" class="btn btn-secondary">Rediģēt profilu</a>
+            {{-- Izrakstīšanās forma --}}
+            <form action="{{ route('logout') }}" method="POST" style="display: inline;">
+                @csrf
+                <button type="submit" class="btn btn-danger">Izrakstīties</button>
+            </form>
+        </div>
+    @endif
 </div>
 @endsection
+
