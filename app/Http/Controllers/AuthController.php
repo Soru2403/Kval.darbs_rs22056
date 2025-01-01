@@ -34,8 +34,8 @@ class AuthController extends Controller
         // Pieslēdz lietotāju uzreiz pēc reģistrācijas
         Auth::login($user);
 
-        // Pāradresē uz lietotāja profilu
-        return redirect()->route('profile')->with('success', 'Reģistrācija veiksmīga!');
+        // Pāradresē uz profila rediģēšanas lapu pēc reģistrācijas
+        return redirect()->route('profile.complete_registration_form')->with('success', 'Reģistrācija veiksmīga! Lūdzu, pabeidziet savu profilu.');
     }
 
     // Rāda pieteikšanās formas lapu
@@ -81,4 +81,3 @@ class AuthController extends Controller
         return redirect()->route('home')->with('success', 'Esat veiksmīgi izrakstījies!');
     }
 }
-

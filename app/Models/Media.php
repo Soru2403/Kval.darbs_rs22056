@@ -9,11 +9,6 @@ class Media extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'description', 'type', 'cover_image'];
-
-    // Funkcija priekš vērtējumu sasaistes
-    public function ratings()
-    {
-        return $this->hasMany(Rating::class);
-    }
+    protected $table = 'media'; // Название таблицы в БД
+    protected $fillable = ['title', 'description', 'type', 'creator', 'release_year', 'genre', 'image_url'];
 }

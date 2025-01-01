@@ -16,6 +16,8 @@ Route::get('/', function () {
 // Reģistrācija un autorizācija
 Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register'); // Reģistrācijas formas parādīšana
 Route::post('/register', [AuthController::class, 'register']); // Reģistrācijas pieprasījuma apstrāde
+Route::get('/profile/complete-registration', [UserController::class, 'showCompleteRegistrationForm'])->middleware('auth')->name('profile.complete_registration_form');// Parāda reģistrācijas pabeigšanas formu
+Route::post('/profile/complete-registration', [UserController::class, 'completeRegistration'])->middleware('auth')->name('profile.complete_registration');// Apstrādā reģistrācijas pabeigšanu
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login'); // Pieteikšanās formas parādīšana
 Route::post('/login', [AuthController::class, 'login'])->name('login.post'); // Pieteikšanās pieprasījuma apstrāde
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); // Izrakstīšanās pieprasījuma apstrāde
@@ -42,14 +44,19 @@ Route::delete('/forum/{postId}/comments/{commentId}', [ForumController::class, '
 
 // Mediju sadaļa
 Route::get('/media', [MediaController::class, 'index'])->name('media.index'); // Mediju saraksts
+Route::get('/media/create', [MediaController::class, 'create'])->name('media.create'); // Pievienot multivides lapu
 Route::get('/media/{id}', [MediaController::class, 'show'])->name('media.show'); // Mediju detaļas
-Route::post('/media/{id}/rate', [MediaController::class, 'rate'])->middleware('auth')->name('media.rate'); // Mediju vērtēšana
+Route::post('/media', [MediaController::class, 'store'])->name('media.store'); // Pievienošanas veidlapas apstrāde
+Route::get('/media/{id}/edit', [MediaController::class, 'edit'])->name('media.edit'); // Mediju rediģēšana
+Route::post('/media/{id}/update', [MediaController::class, 'update'])->name('media.update'); // Mediju atjaunināšana
+Route::delete('/media/{id}', [MediaController::class, 'destroy'])->name('media.destroy'); // Mediju dzēšana
 
 // Lietotāju profilu sadaļa
 Route::get('/profile', [UserController::class, 'profile'])->middleware('auth')->name('profile'); // Lietotāja profils
 Route::get('/profile/edit', [UserController::class, 'edit'])->middleware('auth')->name('profile.edit'); // Profila rediģēšana
 Route::put('/profile/update', [UserController::class, 'updateProfile'])->middleware('auth')->name('profile.update'); // Profila atjaunināšana
 Route::get('/profile/{id}', [UserController::class, 'show'])->name('profile.show'); // Cita lietotāja profils
+Route::delete('/profile/{id}', [UserController::class, 'destroy'])->middleware('auth')->name('profile.destroy'); // Lietotāja dzēšana
 
 // Kolekciju pārvaldība
 Route::get('/collections/my', [CollectionController::class, 'myCollections'])->middleware('auth')->name('collections.my'); // Lietotāja kolekcijas
@@ -63,14 +70,10 @@ Route::post('/friendships/{id}/accept', [FriendshipController::class, 'acceptReq
 Route::delete('/friendships/{id}', [FriendshipController::class, 'destroy'])->middleware('auth')->name('friendships.destroy'); // Draudzības attiecību dzēšana
 
 // Administratora funkcijas
-Route::middleware(['auth', 'admin'])->group(function () {
-    Route::get('/admin', [UserController::class, 'adminDashboard'])->name('admin.dashboard'); // Admin panelis
-    Route::delete('/users/{id}', [UserController::class, 'destroy'])->name('users.destroy'); // Lietotāja dzēšana
-    Route::post('/users/{id}/privileges', [UserController::class, 'changePrivileges'])->name('users.privileges'); // Privilēģiju maiņa
-});
+Route::get('/admin', [UserController::class, 'adminDashboard'])->middleware('auth')->name('admin.dashboard'); // Admin panelis
+Route::post('/users/{id}/privileges', [UserController::class, 'changePrivileges'])->middleware('auth')->name('users.privileges'); // Privilēģiju maiņa
 
 // Fallback maršruts
 Route::fallback(function () {
     return redirect()->route('home'); // Neeksistējoša lapa -> novirze uz galveno lapu
 });
-

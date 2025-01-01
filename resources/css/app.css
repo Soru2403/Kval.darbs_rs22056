@@ -101,6 +101,32 @@
     .page-item.disabled span.page-link {
         display: none;
     }
+    .media-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
     
+    .media-item {
+        border: 1px solid #ccc;
+        padding: 15px;
+        width: 200px;
+        text-align: center;
+    }
+    
+    .media-thumbnail {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .media-details {
+        text-align: center;
+    }
+    
+    .media-details img {
+        max-width: 50%;
+        height: auto;
+        margin: 20px 0;
+    }
 }
 

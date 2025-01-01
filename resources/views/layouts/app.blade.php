@@ -23,6 +23,7 @@
             <nav>
                 <a href="{{ route('collections.index') }}" class="ms-3 text-decoration-none text-primary">Collections</a>
                 <a href="{{ route('forum.index') }}" class="ms-3 text-decoration-none text-primary">Forum</a>
+                <a href="{{ route('media.index') }}" class="ms-3 text-decoration-none text-primary">Mēdiji</a>
             </nav>
 
             <!-- Lietotāja paneļa saites -->
